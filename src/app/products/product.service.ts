@@ -1,24 +1,36 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 
-import { catchError, Observable, tap, throwError } from 'rxjs';
+import { catchError, map, Observable, tap, throwError } from 'rxjs';
 
 import { Product } from './product';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ProductService {
   private productsUrl = 'api/products';
   private suppliersUrl = 'api/suppliers';
 
-  products$ = this.http.get<Product[]>(this.productsUrl)
-  .pipe(
-    tap(data => console.log('Products: ', JSON.stringify(data))),
+  products$ = this.http.get<Product[]>(this.productsUrl).pipe(
+    map(
+      //map RxJS
+      (products) =>
+        //map array JS
+        products.map(
+          (product) =>
+            ({
+              ...product,
+              price: product.price ? product.price * 1.5 : 0,
+              searchKey: [product.productName],
+            } as Product)
+        )
+    ),
+    tap((data) => console.log('Products: ', JSON.stringify(data))),
     catchError(this.handleError)
   );
-  
-  constructor(private http: HttpClient) { }
+
+  constructor(private http: HttpClient) {}
 
   private fakeProduct(): Product {
     return {
@@ -29,7 +41,7 @@ export class ProductService {
       price: 8.9,
       categoryId: 3,
       // category: 'Toolbox',
-      quantityInStock: 30
+      quantityInStock: 30,
     };
   }
 
@@ -48,5 +60,4 @@ export class ProductService {
     console.error(err);
     return throwError(() => errorMessage);
   }
-
 }
